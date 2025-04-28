@@ -29,3 +29,9 @@ variable "machine_size" {
   type    = string
 }
 
+variable "vm_count" {
+  description = "Number of VM's"
+  default = 2
+  type = number
+}
+

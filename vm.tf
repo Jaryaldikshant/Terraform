@@ -1,3 +1,5 @@
+# Define the number of VMs you want to create globally
+
 
 # RESOURCE GROUP
 resource "azurerm_resource_group" "my-rg" {
@@ -27,6 +29,7 @@ resource "azurerm_network_security_group" "nsg" {
   location            = azurerm_resource_group.my-rg.location
   resource_group_name = azurerm_resource_group.my-rg.name
 
+  # rules to allow SSH access (port 22)
   security_rule {
     name                       = "allow_ssh"
     priority                   = 1001
@@ -39,6 +42,7 @@ resource "azurerm_network_security_group" "nsg" {
     destination_address_prefix = "*"
   }
 
+  # rules to allow HTTP access (port 80)
   security_rule {
     name                       = "allow_http"
     priority                   = 1002
@@ -60,16 +64,19 @@ resource "azurerm_subnet_network_security_group_association" "nsg_association" {
 
 # PUBLIC IP
 resource "azurerm_public_ip" "public_ip" {
-  name                = "${var.prefix}-public-ip"
+  count               = var.vm_count # Use count to create multiple public IPs
+  
+  name                = "${var.prefix}-public-ip-${count.index}" # for unique name for each public IP
   location            = azurerm_resource_group.my-rg.location
   resource_group_name = azurerm_resource_group.my-rg.name
   allocation_method   = "Static"
-  domain_name_label   = "${var.prefix}-vm-pip"
+  domain_name_label   = "${var.prefix}-vm-pip-${count.index}" # for unique domain name for each public IP
 }
 
 # NETWORK INTERFACE
 resource "azurerm_network_interface" "main" {
-  name                = "${var.prefix}-nic"
+  count                = var.vm_count # use count to create multiple network interfaces
+  name                 = "${var.prefix}-nic-${count.index}" # for unique name for each NIC
   location            = azurerm_resource_group.my-rg.location
   resource_group_name = azurerm_resource_group.my-rg.name
 
@@ -77,19 +84,18 @@ resource "azurerm_network_interface" "main" {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.internal.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.public_ip.id
+    public_ip_address_id          = azurerm_public_ip.public_ip[count.index].id # for attach each public IP to its NIC
   }
 }
 
 # VIRTUAL MACHINE
 resource "azurerm_virtual_machine" "main" {
-  name                  = "${var.prefix}-vm"
+  count                 = var.vm_count # use count to create multiple VMs
+  name                  = "${var.prefix}-vm-${count.index}" # for unique name for each VM
   location              = azurerm_resource_group.my-rg.location
   resource_group_name   = azurerm_resource_group.my-rg.name
-  network_interface_ids = [azurerm_network_interface.main.id]
+  network_interface_ids = [azurerm_network_interface.main[count.index].id] # for attach each NIC to its VM
   vm_size               = var.machine_size
-
-
 
   storage_image_reference {
     publisher = "Canonical"
@@ -99,19 +105,17 @@ resource "azurerm_virtual_machine" "main" {
   }
 
   storage_os_disk {
-    name              = "myosdisk1"
+    name              = "myosdisk-${count.index + 1}" # for unique disk name for each VM
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
   }
 
   os_profile {
-    computer_name  = var.machine_name
+    computer_name  = "${var.machine_name}-${count.index}" # for unique computer name for each VM
     admin_username = var.username
     admin_password = var.password
-
-    custom_data = base64encode(file("install_nginx.sh"))
-
+    custom_data    = base64encode(file("install_nginx.sh")) # script to install ngix
   }
 
   os_profile_linux_config {
