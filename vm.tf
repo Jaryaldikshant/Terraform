@@ -1,12 +1,8 @@
-# VARIABLES
-variable "prefix" {
-  default = "tfvm-linux"
-}
 
 # RESOURCE GROUP
 resource "azurerm_resource_group" "my-rg" {
   name     = "${var.prefix}-rg"
-  location = "Canada Central"
+  location = var.location
 }
 
 # VIRTUAL NETWORK
@@ -39,6 +35,18 @@ resource "azurerm_network_security_group" "nsg" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "allow_http"
+    priority                   = 1002
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
@@ -79,7 +87,9 @@ resource "azurerm_virtual_machine" "main" {
   location              = azurerm_resource_group.my-rg.location
   resource_group_name   = azurerm_resource_group.my-rg.name
   network_interface_ids = [azurerm_network_interface.main.id]
-  vm_size               = "Standard_DS1_v2"
+  vm_size               = var.machine_size
+
+
 
   storage_image_reference {
     publisher = "Canonical"
@@ -96,13 +106,20 @@ resource "azurerm_virtual_machine" "main" {
   }
 
   os_profile {
-    computer_name  = "hostname"
-    admin_username = "testadmin"
-    admin_password = "Password1234!"
+    computer_name  = var.machine_name
+    admin_username = var.username
+    admin_password = var.password
+
+    custom_data = base64encode(file("install_nginx.sh"))
+
   }
 
   os_profile_linux_config {
-    disable_password_authentication = false
+    disable_password_authentication = true
+    ssh_keys {
+      path     = "/home/${var.username}/.ssh/authorized_keys"
+      key_data = file("ssh_key.pub")
+    }
   }
 
   tags = {
