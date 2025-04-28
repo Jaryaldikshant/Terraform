@@ -64,19 +64,18 @@ resource "azurerm_subnet_network_security_group_association" "nsg_association" {
 
 # PUBLIC IP
 resource "azurerm_public_ip" "public_ip" {
-  count               = var.vm_count # Use count to create multiple public IPs
-  
-  name                = "${var.prefix}-public-ip-${count.index}" # for unique name for each public IP
-  location            = azurerm_resource_group.my-rg.location
+  for_each           = tomap(var.vm_configs)  # Use for_each to loop over VM configs
+  name               = "${var.prefix}-public-ip-${each.key}"
+  location           = azurerm_resource_group.my-rg.location
   resource_group_name = azurerm_resource_group.my-rg.name
   allocation_method   = "Static"
-  domain_name_label   = "${var.prefix}-vm-pip-${count.index}" # for unique domain name for each public IP
+  domain_name_label   = "${var.prefix}-vm-pip-${each.key}"
 }
 
 # NETWORK INTERFACE
 resource "azurerm_network_interface" "main" {
-  count                = var.vm_count # use count to create multiple network interfaces
-  name                 = "${var.prefix}-nic-${count.index}" # for unique name for each NIC
+  for_each            = tomap(var.vm_configs)  # Use for_each to loop over VM configs
+  name                = "${var.prefix}-nic-${each.key}"
   location            = azurerm_resource_group.my-rg.location
   resource_group_name = azurerm_resource_group.my-rg.name
 
@@ -84,18 +83,18 @@ resource "azurerm_network_interface" "main" {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.internal.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.public_ip[count.index].id # for attach each public IP to its NIC
+    public_ip_address_id          = azurerm_public_ip.public_ip[each.key].id
   }
 }
 
 # VIRTUAL MACHINE
 resource "azurerm_virtual_machine" "main" {
-  count                 = var.vm_count # use count to create multiple VMs
-  name                  = "${var.prefix}-vm-${count.index}" # for unique name for each VM
-  location              = azurerm_resource_group.my-rg.location
-  resource_group_name   = azurerm_resource_group.my-rg.name
-  network_interface_ids = [azurerm_network_interface.main[count.index].id] # for attach each NIC to its VM
-  vm_size               = var.machine_size
+  for_each            = tomap(var.vm_configs)  # Use for_each to loop over VM configs
+  name                = "${each.value.vm_name}"
+  location            = azurerm_resource_group.my-rg.location
+  resource_group_name = azurerm_resource_group.my-rg.name
+  network_interface_ids = [azurerm_network_interface.main[each.key].id]  # Attach each NIC to its VM
+  vm_size             = each.value.vm_size  # Use the VM size from the map
 
   storage_image_reference {
     publisher = "Canonical"
@@ -105,17 +104,17 @@ resource "azurerm_virtual_machine" "main" {
   }
 
   storage_os_disk {
-    name              = "myosdisk-${count.index + 1}" # for unique disk name for each VM
+    name              = "myosdisk-${each.key}"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
   }
 
   os_profile {
-    computer_name  = "${var.machine_name}-${count.index}" # for unique computer name for each VM
+    computer_name  = "${each.value.vm_name}"
     admin_username = var.username
     admin_password = var.password
-    custom_data    = base64encode(file("install_nginx.sh")) # script to install ngix
+    custom_data    = base64encode(file("install_nginx.sh"))
   }
 
   os_profile_linux_config {

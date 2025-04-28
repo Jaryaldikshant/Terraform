@@ -29,9 +29,26 @@ variable "machine_size" {
   type    = string
 }
 
-variable "vm_count" {
-  description = "Number of VM's"
-  default = 2
-  type = number
+
+variable "vm_configs" {
+  description = "Map of VM configurations"
+  type = map(object({
+    vm_size : string
+    vm_name : string
+  }))
+
+  default = {
+    "vm1" = {
+      vm_size = "Standard_B1s"
+      vm_name = "vm1"
+    },
+
+    "vm2" = {
+      vm_size = "Standard_B2ms"
+      vm_name = "vm2"
+    }
+
+  }
+  
 }
 
