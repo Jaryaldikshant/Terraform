@@ -1,3 +1,6 @@
+
+// Output for count
+
 # output "vm_public_ip" {
 #   # value = azurerm_virtual_machine.main.public_ip
 #   value = azurerm_public_ip.public_ip[*].ip_address
@@ -19,6 +22,9 @@
 
 
 
+
+
+// Output for For each
 output "vm_public_ip" {
   value = [
   for ip  in azurerm_public_ip.public_ip : ip.ip_address

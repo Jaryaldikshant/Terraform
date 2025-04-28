@@ -60,6 +60,8 @@ resource "azurerm_network_security_group" "nsg" {
 resource "azurerm_subnet_network_security_group_association" "nsg_association" {
   subnet_id                 = azurerm_subnet.internal.id
   network_security_group_id = azurerm_network_security_group.nsg.id
+
+  depends_on = [ azurerm_network_security_group.nsg,azurerm_subnet.internal ]
 }
 
 # PUBLIC IP
