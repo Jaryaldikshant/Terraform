@@ -1,4 +1,3 @@
-
 variable "prefix" {
   default = "vm-linux"
   type    = string
@@ -20,7 +19,7 @@ variable "machine_name" {
 }
 
 variable "location" {
-  default = "Canada Central"
+  default = "westeurope"
   type    = string
 }
 
@@ -28,7 +27,6 @@ variable "machine_size" {
   default = "Standard_DS1_v2"
   type    = string
 }
-
 
 variable "vm_configs" {
   description = "Map of VM configurations"
@@ -42,13 +40,19 @@ variable "vm_configs" {
       vm_size = "Standard_B1s"
       vm_name = "vm1"
     },
-
     "vm2" = {
-      vm_size = "Standard_B2ms"
+      vm_size = "Standard_B2s"
       vm_name = "vm2"
+    },
+    "vm3" = {
+      vm_size = "Standard_B2s"
+      vm_name = "vm3"
     }
-
   }
-  
+}
+
+variable "env" {
+  default = "dev"
+  type    = string
 }
 

@@ -60,15 +60,14 @@ resource "azurerm_network_security_group" "nsg" {
 resource "azurerm_subnet_network_security_group_association" "nsg_association" {
   subnet_id                 = azurerm_subnet.internal.id
   network_security_group_id = azurerm_network_security_group.nsg.id
-
-  depends_on = [ azurerm_network_security_group.nsg,azurerm_subnet.internal ]
+  depends_on               = [azurerm_network_security_group.nsg, azurerm_subnet.internal]
 }
 
 # PUBLIC IP
 resource "azurerm_public_ip" "public_ip" {
-  for_each           = tomap(var.vm_configs)  # Use for_each to loop over VM configs
-  name               = "${var.prefix}-public-ip-${each.key}"
-  location           = azurerm_resource_group.my-rg.location
+  for_each            = var.vm_configs
+  name                = "${var.prefix}-public-ip-${each.key}"
+  location            = azurerm_resource_group.my-rg.location
   resource_group_name = azurerm_resource_group.my-rg.name
   allocation_method   = "Static"
   domain_name_label   = "${var.prefix}-vm-pip-${each.key}"
@@ -76,7 +75,7 @@ resource "azurerm_public_ip" "public_ip" {
 
 # NETWORK INTERFACE
 resource "azurerm_network_interface" "main" {
-  for_each            = tomap(var.vm_configs)  # Use for_each to loop over VM configs
+  for_each            = var.vm_configs
   name                = "${var.prefix}-nic-${each.key}"
   location            = azurerm_resource_group.my-rg.location
   resource_group_name = azurerm_resource_group.my-rg.name
@@ -91,12 +90,12 @@ resource "azurerm_network_interface" "main" {
 
 # VIRTUAL MACHINE
 resource "azurerm_virtual_machine" "main" {
-  for_each            = tomap(var.vm_configs)  # Use for_each to loop over VM configs
-  name                = "${each.value.vm_name}"
-  location            = azurerm_resource_group.my-rg.location
-  resource_group_name = azurerm_resource_group.my-rg.name
-  network_interface_ids = [azurerm_network_interface.main[each.key].id]  # Attach each NIC to its VM
-  vm_size             = each.value.vm_size  # Use the VM size from the map
+  for_each              = var.vm_configs
+  name                  = each.value.vm_name
+  location              = azurerm_resource_group.my-rg.location
+  resource_group_name   = azurerm_resource_group.my-rg.name
+  network_interface_ids = [azurerm_network_interface.main[each.key].id]
+  vm_size               = "Standard_B1ls"
 
   storage_image_reference {
     publisher = "Canonical"
@@ -113,7 +112,7 @@ resource "azurerm_virtual_machine" "main" {
   }
 
   os_profile {
-    computer_name  = "${each.value.vm_name}"
+    computer_name  = each.value.vm_name
     admin_username = var.username
     admin_password = var.password
     custom_data    = base64encode(file("install_nginx.sh"))
@@ -123,7 +122,7 @@ resource "azurerm_virtual_machine" "main" {
     disable_password_authentication = true
     ssh_keys {
       path     = "/home/${var.username}/.ssh/authorized_keys"
-      key_data = file("ssh_key.pub")
+      key_data = file("ssh_Key.pub")
     }
   }
 
@@ -131,3 +130,5 @@ resource "azurerm_virtual_machine" "main" {
     environment = "staging"
   }
 }
+
+
