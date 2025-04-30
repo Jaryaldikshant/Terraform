@@ -43,16 +43,12 @@ variable "vm_configs" {
     "vm2" = {
       vm_size = "Standard_B2s"
       vm_name = "vm2"
-    },
-    "vm3" = {
-      vm_size = "Standard_B2s"
-      vm_name = "vm3"
     }
   }
 }
 
 variable "env" {
-  default = "dev"
+  default = "prd"
   type    = string
 }
 
