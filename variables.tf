@@ -1,5 +1,5 @@
 variable "prefix" {
-  default = "vm-linux"
+  default = "vm-linux-dev"
   type    = string
 }
 
@@ -19,7 +19,7 @@ variable "machine_name" {
 }
 
 variable "location" {
-  default = "westeurope"
+  default = "Canada Central"
   type    = string
 }
 

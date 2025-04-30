@@ -127,7 +127,7 @@ resource "azurerm_virtual_machine" "main" {
   }
 
   tags = {
-    environment = "staging"
+    Environment = var.env
   }
 }
 
