@@ -97,6 +97,9 @@ resource "azurerm_virtual_machine" "main" {
   network_interface_ids = [azurerm_network_interface.main[each.key].id]
   vm_size               = "Standard_B1ls"
 
+
+  delete_os_disk_on_termination = true
+
   storage_image_reference {
     publisher = "Canonical"
     offer     = "0001-com-ubuntu-server-focal"
